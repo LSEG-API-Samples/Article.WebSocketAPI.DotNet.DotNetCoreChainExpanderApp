@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ChainExpander.Events;
 using ChainExpander.Models.Data;
@@ -126,27 +127,56 @@ namespace ChainExpander
             else
             {
                 //Method 1
-                
+
                 var tempStr = chainRic.Split('#').ToList();
                 _subRic = tempStr.Count > 1 ? tempStr[1] : chainRic;
                 _indexRic = tempStr.Count > 1 ? "0" : string.Empty;
-                Out($"Start retrieving {_indexRic}{(string.IsNullOrEmpty(_indexRic) ? string.Empty:"#")}{_subRic}",true);
-                _chainList.Add(chainRic,ChainRequestStatusEnum.Wait);
-                for (var i = 0; i <=9; i++)
+                Out($"Start retrieving {_indexRic}{(string.IsNullOrEmpty(_indexRic) ? string.Empty : "#")}{_subRic}",
+                    true);
+                _chainList.Add(chainRic, ChainRequestStatusEnum.Wait);
+                var testList = new List<string> {"","10#","A#","60#","3C#","95#","5F#","1F4#","500#","3E8#","1000#" };
+                foreach (var testRic in testList)
                 {
-                    if(!_chainList.ContainsKey($"{i}#{_subRic}"))
-                         _chainList.Add($"{i}#{_subRic}", ChainRequestStatusEnum.Wait);
+                    var tempKey = $"{testRic}{_subRic}";
+                    if (!_chainList.ContainsKey(tempKey))
+                    _chainList.Add(tempKey, ChainRequestStatusEnum.Wait);
                 }
-                _chainList.Add($"10#{_subRic}", ChainRequestStatusEnum.Wait);
-                _chainList.Add($"A#{_subRic}", ChainRequestStatusEnum.Wait);
-                _chainList.Add($"60#{_subRic}", ChainRequestStatusEnum.Wait);
-                _chainList.Add($"3C#{_subRic}", ChainRequestStatusEnum.Wait);
-                _chainList.Add($"95#{_subRic}", ChainRequestStatusEnum.Wait);
-                _chainList.Add($"5F#{_subRic}", ChainRequestStatusEnum.Wait);
-                _chainList.Add($"1F4#{_subRic}", ChainRequestStatusEnum.Wait);
-                _chainList.Add($"500#{_subRic}", ChainRequestStatusEnum.Wait);
-                _chainList.Add($"3E8#{_subRic}", ChainRequestStatusEnum.Wait);
-                _chainList.Add($"1000#{_subRic}", ChainRequestStatusEnum.Wait);
+
+                var endIndex = 9;
+                try
+                {
+                    if (tempStr.Count > 1)
+                    {
+                        var retVal = 0;
+                        if (int.TryParse(tempStr[0],
+                            System.Globalization.NumberStyles.HexNumber,
+                            System.Globalization.CultureInfo.InvariantCulture, out retVal))
+                        {
+
+                            endIndex = retVal;
+                        }
+                        
+                        
+                    }
+                }catch(Exception ex)
+                {
+                    RaiseErrorEvent(DateTime.Now,ex.Message);
+                }
+
+                for (var i = 0; i <=endIndex; i++)
+                {
+                    var keyTemp = $"{i}#{_subRic}";
+                    Console.WriteLine(keyTemp);
+                    if (!_chainList.ContainsKey(keyTemp))
+                        _chainList.Add($"{keyTemp}", ChainRequestStatusEnum.Wait);
+                    if (i <= 9) continue;
+                    keyTemp = $"{i:X}#{_subRic}";
+                    Console.WriteLine(keyTemp);
+                    if (!_chainList.ContainsKey(keyTemp))
+                        _chainList.Add($"{keyTemp}", ChainRequestStatusEnum.Wait);
+                }
+               
+
                 var batchList = new StringBuilder();
                 foreach (var item in _chainList.Keys)
                 {
