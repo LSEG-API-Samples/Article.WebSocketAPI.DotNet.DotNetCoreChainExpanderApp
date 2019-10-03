@@ -121,6 +121,7 @@ namespace ChainExpander
             
             if (_isSequentialMode)
             {
+                Out($"Start retrieving {chainRic}",true);
                 _chainList.Add(chainRic, ChainRequestStatusEnum.Wait);
                 await _websocketMarketDataMgr.SendMarketPriceRequest(chainRic, _streamId, false);
             }
@@ -137,9 +138,9 @@ namespace ChainExpander
                 var testList = new List<string> {"","10#","A#","60#","3C#","95#","5F#","1F4#","500#","3E8#","1000#" };
                 foreach (var testRic in testList)
                 {
-                    var tempKey = $"{testRic}{_subRic}";
-                    if (!_chainList.ContainsKey(tempKey))
-                    _chainList.Add(tempKey, ChainRequestStatusEnum.Wait);
+                    var keyTemp = $"{testRic}{_subRic}";
+                    if (!_chainList.ContainsKey(keyTemp))
+                    _chainList.Add(keyTemp, ChainRequestStatusEnum.Wait);
                 }
 
                 var endIndex = 9;
@@ -147,10 +148,9 @@ namespace ChainExpander
                 {
                     if (tempStr.Count > 1)
                     {
-                        var retVal = 0;
                         if (int.TryParse(tempStr[0],
                             System.Globalization.NumberStyles.HexNumber,
-                            System.Globalization.CultureInfo.InvariantCulture, out retVal))
+                            System.Globalization.CultureInfo.InvariantCulture, out var retVal))
                         {
 
                             endIndex = retVal;
@@ -166,15 +166,19 @@ namespace ChainExpander
                 for (var i = 0; i <=endIndex; i++)
                 {
                     var keyTemp = $"{i}#{_subRic}";
-                    Console.WriteLine(keyTemp);
+                    //For Decimal
                     if (!_chainList.ContainsKey(keyTemp))
                         _chainList.Add($"{keyTemp}", ChainRequestStatusEnum.Wait);
+
                     if (i <= 9) continue;
+                    //For Hex
                     keyTemp = $"{i:X}#{_subRic}";
-                    Console.WriteLine(keyTemp);
                     if (!_chainList.ContainsKey(keyTemp))
                         _chainList.Add($"{keyTemp}", ChainRequestStatusEnum.Wait);
                 }
+
+                if (endIndex > _stopIndex)
+                    _stopIndex = endIndex;
                
 
                 var batchList = new StringBuilder();
@@ -511,7 +515,8 @@ namespace ChainExpander
                                 _chainList[$"1000#{_subRic}"] == ChainRequestStatusEnum.NotFound)
                                 _batchSize = 1000;
 
-                            _stopIndex = _batchSize;
+                            if(_batchSize>_stopIndex)
+                                 _stopIndex = _batchSize;
                         }
                         else
                         {
