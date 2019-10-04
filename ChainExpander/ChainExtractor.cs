@@ -135,7 +135,7 @@ namespace ChainExpander
                 Out($"Start retrieving {_indexRic}{(string.IsNullOrEmpty(_indexRic) ? string.Empty : "#")}{_subRic}",
                     true);
                 _chainList.Add(chainRic, ChainRequestStatusEnum.Wait);
-                var testList = new List<string> {"","10#","A#","60#","3C#","95#","5F#","1F4#","500#","3E8#","1000#" };
+                var testList = new List<string> {"10#","A#","60#","3C#","95#","5F#","1F4#","500#","3E8#","1000#" };
                 foreach (var testRic in testList)
                 {
                     var keyTemp = $"{testRic}{_subRic}";
@@ -457,7 +457,7 @@ namespace ChainExpander
                             if (ricName == _chainData.StartChainRic)
                             {
 
-                                GenerateResult(_chainData.ChainList, $"Chain Extraction failed {message.State.Text}",false);
+                                GenerateResult(_chainData.ChainList, $"Chain Extraction Stop {message.State.Text}",false);
                                 return;
                             }
                             else

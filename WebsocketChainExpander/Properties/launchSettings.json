@@ -2,7 +2,7 @@
   "profiles": {
     "WebsocketChainConsumerApp": {
       "commandName": "Project",
-      "commandLineArgs": "-s ws://10.67.4.28:15000/WebSocket -u apitest -i 0#UNIVERSE.PK --verbose > out6.txt",
+      "commandLineArgs": "-s ws://localhost:15000/WebSocket -u user1 -i 0#.SETI --verbose ",
       "nativeDebugging": false
     }
   }
