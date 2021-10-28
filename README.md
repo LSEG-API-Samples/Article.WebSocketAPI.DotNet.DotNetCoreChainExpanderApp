@@ -1,24 +1,24 @@
 # Building a Chain Expander application using Elektron Websocket API and .NET Core C# 
 
-[Elektron WebSocket API](https://developers.refinitiv.com/elektron/WebSocket-api/learning) is a server-side API which provides an interface to create direct WebSocket access to any OMM Content via ADS. The API leverages standard JSON and WebSocket protocols to be easy to implement and understand. It does mean the software developer can use any programming language with the WebSocket API. It requires a JSON parser with a Client WebSocket library for connecting to the server and sends or receive data using a messages specification provided on [WebSocket API Developer Guide](https://docsdevelopers.refinitiv.com/1563871102906/14977/). 
+[Refinitiv Real-Time WebSocket API](https://developers.refinitiv.com/en/api-catalog/refinitiv-real-time-opnsrc/refinitiv-websocket-api) is a server-side API which provides an interface to create direct WebSocket access to any OMM Content via ADS. The API leverages standard JSON and WebSocket protocols to be easy to implement and understand. It does mean the software developer can use any programming language with the WebSocket API. It requires a JSON parser with a Client WebSocket library for connecting to the server and sends or receive data using a messages specification provided on [WebSocket API Developer Guide](https://developers.refinitiv.com/en/api-catalog/refinitiv-real-time-opnsrc/refinitiv-websocket-api/documentation#web-socket-api-developer-guide). 
  
-This article provides a sample application which illustrates how to use Elektron Websocket API to retrieve a Chain Records and get underlying RIC symbols. The use case is a solution for one of the popular questions regarding how can we automatically retrieving a list of all RIC symbols available on Elektron Realtime data feed. There is no capability on the data feed to provide all RIC symbols available for the user. However, there is a choice for the user to expanding  Chain RIC for specific market index or Stock Exchange and then get a list of RIC symbols instead. Anyway, the user has to know Chain RIC in advance. If you are not familiar with the Chain, you can find additional details from [About Chain ariticle](https://developers.refinitiv.com/article/elektron-article-1#AboutChains). It is a well-explained article about Chain RIC and its usage. Our sample application applies the methods described in the article with the WebSocket API to expanding Chain RIC.  
+This article provides a sample application which illustrates how to use Refinitiv Real-Time Websocket API to retrieve a Chain Records and get underlying RIC symbols. The use case is a solution for one of the popular questions regarding how can we automatically retrieving a list of all RIC symbols available on Elektron Realtime data feed. There is no capability on the data feed to provide all RIC symbols available for the user. However, there is a choice for the user to expanding  Chain RIC for specific market index or Stock Exchange and then get a list of RIC symbols instead. Anyway, the user has to know Chain RIC in advance. If you are not familiar with the Chain, you can find additional details from [About Chain ariticle](https://developers.refinitiv.com/en/article-catalog/article/simple-chain-objects-ema-part-1#AboutChains). It is a well-explained article about Chain RIC and its usage. Our sample application applies the methods described in the article with the WebSocket API to expanding Chain RIC.  
 
 This sample application also utilizes C# codes from WebsocketAdapter project from  [the MRNWebSocketViewer Github repository](https://github.com/Refinitiv-API-Samples/Example.WebSocketAPI.CSharp.MRNWebSocketViewer), 
 to manage WebSocket client connection and send or receive messages. Thus this article will describe only the detail about the Chain expanding logic and related implementation. It will not provide dept details regarding how it uses C# ClientWebsocket class to communicate with the server.
 
 ## Prerequisites
 
-* User must have access to existing TREP 3.2.1 or higher which provide a WebSocket connection from Elektron service. The user must have permission to request the Chains instrument using Market Price domain.
-* Understand concepts of Chain and how to retrieve it. Please read [About Chain ariticle](https://developers.refinitiv.com/article/elektron-article-1#AboutChains).
-* Understand [WebSocket API Usages.](https://docs-developers.refinitiv.com/1563871102906/14977/).
+* User must have access to existing RTDS 3.2.1 or higher which provide a WebSocket connection from the Refinitiv Real-Time service. The user must have permission to request the Chains instrument using Market Price domain.
+* Understand concepts of Chain and how to retrieve it. Please read [About Chain ariticle](https://developers.refinitiv.com/en/article-catalog/article/simple-chain-objects-ema-part-1#AboutChains).
+* Understand [WebSocket API Usages.](https://developers.refinitiv.com/en/api-catalog/refinitiv-real-time-opnsrc/refinitiv-websocket-api/documentation#web-socket-api-developer-guide).
 * Understand [usage of ClientWebsocket class.](https://docs.microsoft.com/en-us/dotnet/api/system.net.websockets.clientwebsocket?view=netcore-2.2).
 * [.NET Core 2.2 or later version](https://dotnet.microsoft.com/download/dotnet-core/) 
 * Visual Studio 2017 or 2019 or [Visual Studio Code](https://code.visualstudio.com/) to open project, compile and build a solution. 
 
 ### What is a Chain RIC?
 
-We will provide you summary details of the Chain before we move to the next topics about the chain processing logic and .NET core implementation. Chain Records are used to hold RIC symbols that have a common association. It's a legacy of an older data distribution protocol called Marketfeed and still available to request from Elektron by using Market Price domain based on Reuters Domain Models (RDM). The Chain itself does not provide a price or market movement. Instead, it gives a list of particular RIC/constituent such as a list of RIC for a specific market, e.g., a list of strike prices for a particular option contract. 
+We will provide you summary details of the Chain before we move to the next topics about the chain processing logic and .NET core implementation. Chain Records are used to hold RIC symbols that have a common association. It's a legacy of an older data distribution protocol called Marketfeed and still available to request from Elektron by using Market Price domain based on Refinitiv Domain Models (RDM). The Chain itself does not provide a price or market movement. Instead, it gives a list of particular RIC/constituent such as a list of RIC for a specific market, e.g., a list of strike prices for a particular option contract. 
 
 The following RIC is a sample Chain RIC.
 
@@ -32,17 +32,17 @@ Chain 0#UNIVERSE.PK provides the Pink sheet market.
 ```
 
 Below is a Chains structure for Down Jones Industrial Average Index Chain(0#.DJI)
-![Chain Structure](https://developers.refinitiv.com/sites/default/files/03%20-%20ChainDataStructure_1.png)
+![Chain Structure](https://developers.refinitiv.com/en/article-catalog/article/simple-chain-objects-ema-part-1#AboutChains)
 
 In this particular example, the chain composed of 3 instruments (the three green boxes) called Chain Records or underlying Chain RIC. These Chain Record, are linked together and constitute the complete chain. You can identify whether or not the Chain Record is the last one by checking if the Record contains an EMPTY value for LONGNEXTLR field. Chain Records made of a specific type of MarketPrice instrument specially designed for building chains. From the above picture, an application has to subscribe to the three Chain Record (0#.DJI,1#.DJI, and 2#.DJI) to retrieve all underlying RIC begin from ".DJI" to "XOM.N".
 
 Chains only contain the names of their underlying RIC, not their values(e.g., AAPL.OQ from the Red arrow in the above picture). If the application wants to get a price or specific data from the underlying RIC list, it has to send an item request to retrieve data separately. The sample application provides only the result as underlying RIC list, and it does not send item request to get a price for a RIC in the list.
 
-The sample application will apply the algorithms described in [About chain article](https://developers.refinitiv.com/article/simple-chain-objects-ema-part-1) to create the sample application, so you need to understand the Chain structure at the first step. 
+The sample application will apply the algorithms described in [About chain article](https://developers.refinitiv.com/en/article-catalog/article/simple-chain-objects-ema-part-1#AboutChains) to create the sample application, so you need to understand the Chain structure at the first step. 
 
 ## How to expanding Chains?
 
-There are two approaches we used to process a Chains Records in this article. There are algorithms based on the suggestion from [About chain article](https://developers.refinitiv.com/article/simple-chain-objects-ema-part-1). The first method uses a sequential approach to request RIC and process a Chain Records. The second method is a heuristic algorithm to optimize a Chain processing logic. It can handle the chain faster than the first method, especially with long Chain Records. 
+There are two approaches we used to process a Chains Records in this article. There are algorithms based on the suggestion from [About chain article](https://developers.refinitiv.com/en/article-catalog/article/simple-chain-objects-ema-part-1#AboutChains). The first method uses a sequential approach to request RIC and process a Chain Records. The second method is a heuristic algorithm to optimize a Chain processing logic. It can handle the chain faster than the first method, especially with long Chain Records. 
 
 Using the sequential approach, we ensure that the application will get all Chain Records. It is because the app sends a new snapshot request to request data for the next chain RIC one by one until we found the last Chain RIC. Also, we can compare the result from the second approach with a sequential method to make sure that it returns precisely the same result.
 
@@ -69,7 +69,7 @@ Note that the application has to stop when it receives a Close status while expa
 
 The main issue for the first method is speed and turnaround time because it has to open the Chain Record one by one. Some long Chains may take time more than an hour to retrieve all Chain Records.
 
-The heuristic algorithm was created based on a suggestion from [About chain article](https://developers.refinitiv.com/article/elektron-article-1#BetterPerformances) section "Better performance when opening long chains". It starts from extract the name of RIC root from the input Chain Record(e.g., 0#.DJI RIC root is ".DJI"). And then generate a list of possible Chain Record  0#<RIC root>, 1#<RIC root>, 2#<RIC root>… , n#<RIC root>.
+The heuristic algorithm was created based on a suggestion from [About chain article](https://developers.refinitiv.com/en/article-catalog/article/simple-chain-objects-ema-part-1#AboutChains) section "Better performance when opening long chains". It starts from extract the name of RIC root from the input Chain Record(e.g., 0#.DJI RIC root is ".DJI"). And then generate a list of possible Chain Record  0#<RIC root>, 1#<RIC root>, 2#<RIC root>… , n#<RIC root>.
 
 The application can utilize a batch request feature from Elektron Websocket API to open only one request by passing a list of Chain Record in one batch request. The application process individual response for each item in the batch and skip the response message which the item stream state is Closed. The application can check the completion by verifying whether or not the subscription list contains First Record(Prev Link is Empty) and Last Record (Next Link is Empty). It can do after receives all item in the batch.
 
@@ -632,9 +632,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## References
 
-* [About Chain article](https://developers.refinitiv.com/article/simple-chain-objects-ema-part-1)
-* [Elektron WebSocket API](https://developers.refinitiv.com/elektron/WebSocket-api/learning)
-* [WebSocket API Developer Guide](https://docs-developers.refinitiv.com/1563871102906/14977/)
+* [About Chain article](https://developers.refinitiv.com/en/article-catalog/article/simple-chain-objects-ema-part-1#AboutChains)
+* [Refinitiv Real-Time] WebSocket API](https://developers.refinitiv.com/en/api-catalog/refinitiv-real-time-opnsrc/refinitiv-websocket-api)
+* [WebSocket API Developer Guide](https://developers.refinitiv.com/en/api-catalog/refinitiv-real-time-opnsrc/refinitiv-websocket-api/documentation#web-socket-api-developer-guide)
 * [.NET Core RID Catalog](https://docs.microsoft.com/en-us/dotnet/core/rid-catalog).
 * [Dotnet Core Publish Command](https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-publish?tabs=netcore21)
 * [.NET Commandlineparser](https://github.com/commandlineparser/commandline)
