@@ -32,7 +32,7 @@ Chain 0#UNIVERSE.PK provides the Pink sheet market.
 ```
 
 Below is a Chains structure for Down Jones Industrial Average Index Chain(0#.DJI)
-![Chain Structure](https://developers.refinitiv.com/en/article-catalog/article/simple-chain-objects-ema-part-1#AboutChains)
+![Chain Structure](https://developers.refinitiv.com/content/dam/devportal/articles/simple-chain-objects-for-ema---part-1/03_chaindatastructure_1.png)
 
 In this particular example, the chain composed of 3 instruments (the three green boxes) called Chain Records or underlying Chain RIC. These Chain Record, are linked together and constitute the complete chain. You can identify whether or not the Chain Record is the last one by checking if the Record contains an EMPTY value for LONGNEXTLR field. Chain Records made of a specific type of MarketPrice instrument specially designed for building chains. From the above picture, an application has to subscribe to the three Chain Record (0#.DJI,1#.DJI, and 2#.DJI) to retrieve all underlying RIC begin from ".DJI" to "XOM.N".
 
