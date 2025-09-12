@@ -17,7 +17,7 @@ namespace WebsocketChainConsumerApp
 {
     internal partial class Program
     {
-        private static  Uri WebsocketUri = new Uri("ws://172.20.33.21:15000/WebSocket");
+        private static  Uri WebsocketUri = new Uri("ws://127.0.0.1:15000/WebSocket");
         private static readonly string Clientname = "apitest1";
         private static  string DACS_User = "apitest";
         private static  string AppId = "256";
